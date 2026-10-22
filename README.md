@@ -53,25 +53,26 @@
 
 ```
 Methods_Algorythms_ML_Lab02/
-├── data/                        # CSV-файлы датасета (скачиваются автоматически)
-│   ├── game_of_thrones_train.csv
-│   └── game_of_thrones_test.csv
-├── src/                         # Модули проекта
-│   ├── __init__.py
-│   ├── config.py                # Параметры варианта 17
-│   ├── data_loader.py           # Загрузка данных
-│   ├── preprocessing.py         # Предобработка (Часть 1)
-│   ├── utils.py                 # Метрики и функции расстояния
-│   ├── knn.py                   # kNN (Часть 2)
-│   ├── parzen.py                # aNN / окно Парзена (Часть 3)
-│   ├── compactness.py           # Профиль компактности (Часть 4)
-│   ├── potential.py             # Метод потенциальных функций (Часть 5)
-│   ├── ann_search.py            # Annoy (Часть 6)
-│   └── logistic.py              # Логистическая регрессия (Часть 7)
-├── results/                     # Графики и таблицы результатов
-├── reports/                     # Отчёт
-├── main.py                      # Главный пайплайн
-├── submission.csv               # Предсказания для теста
+├── data/ # CSV-файлы датасета (скачиваются автоматически)
+│ ├── game_of_thrones_train.csv
+│ └── game_of_thrones_test.csv
+├── src/ # Модули проекта
+│ ├── init.py
+│ ├── config.py # Параметры варианта 17
+│ ├── data_loader.py # Загрузка данных
+│ ├── preprocessing.py # Предобработка (Часть 1)
+│ ├── utils.py # Метрики и функции расстояния
+│ ├── knn.py # kNN (Часть 2)
+│ ├── parzen.py # aNN / окно Парзена (Часть 3)
+│ ├── compactness.py # Профиль компактности (Часть 4)
+│ ├── potential.py # Метод потенциальных функций (Часть 5)
+│ ├── ann_search.py # Annoy (Часть 6, локально не используется)
+│ └── logistic.py # Логистическая регрессия (Часть 7)
+├── results/ # Графики и таблицы результатов
+├── reports/ # Отчёт
+├── main.py # Главный пайплайн
+├── submission.csv # Предсказания для теста
+├── Colab_Part6_ANN.ipynb # Ноутбук для Части 6 (Google Colab)
 ├── requirements.txt
 ├── .gitignore
 └── README.md
@@ -125,6 +126,23 @@ python main.py
 5. Сформирует `submission.csv` с предсказаниями для тестовой выборки.
 
 ---
+### Часть 6 (ANN) — Google Colab
+Часть 6 (приближённый поиск ближайших соседей через Annoy) выполняется отдельно в Google Colab, так как библиотека annoy требует компиляции C++ под Windows.
+
+Ссылка на ноутбук: [вставить ссылку на Colab]
+
+В ноутбуке:
+
+1. скачиваются train/test по ссылкам EvADarya;
+
+2. выполняется предобработка;
+
+3. строится AnnoyIndex с n_trees=11, metric="manhattan";
+
+4. ищутся 9 соседей для Petyr Baelish
+Примечание: Petyr Baelish есть только в тестовой выборке, в train его нет. По заданию выбран ближайший по алфавиту персонаж — Palla (см. отчёт);
+
+5. считается recall@9 и строится график зависимости от n_trees.
 
 ## Реализованные части
 
@@ -135,7 +153,7 @@ python main.py
 | 3 | aNN / окно Парзена | `src/parzen.py` |
 | 4 | Профиль компактности и отбор эталонов | `src/compactness.py` |
 | 5 | Метод потенциальных функций | `src/potential.py` |
-| 6 | ANN (Annoy) | `src/ann_search.py` |
+| 6 | ANN (Annoy) | `Colab` |
 | 7 | Логистическая регрессия (L2) | `src/logistic.py` |
 | 8 | Формирование `submission.csv` | `main.py` |
 
@@ -143,7 +161,8 @@ python main.py
 
 ## Зависимости
 
-См. `requirements.txt`. Основные: `numpy`, `pandas`, `scikit-learn`, `matplotlib`, `seaborn`, `annoy`, `scipy`.
+См. `requirements.txt`. Основные: `numpy`, `pandas`, `scikit-learn`, `matplotlib`, `seaborn`,, `scipy`.
+Для Части 6 (Colab) дополнительно: annoy.
 
 ---
 
