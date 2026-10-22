@@ -1,4 +1,4 @@
-"""Главный пайплайн."""
+"""Главный пайплайн лабораторной работы №2, вариант 17."""
 import os
 import warnings
 
@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.linear_model import LogisticRegression
+from sklearn.decomposition import PCA
 
 from src import config as cfg
 from src.data_loader import load_data
@@ -108,7 +109,7 @@ def main():
     pot.fit(X_train, y_train)
     print_metrics("Potential", y_val, pot.predict(X_val))
 
-    # ------- Часть 4. Профиль компактности -------
+    # ------- Часть 4. Профиль компактности + жадное удаление -------
     print("\n[Часть 4] Профиль компактности")
     profile = compactness_profile(X_train, y_train, metric=cfg.METRIC)
     plt.figure(figsize=(8, 4))
@@ -119,11 +120,11 @@ def main():
     plt.grid(alpha=0.3)
     save_fig("compactness_profile")
 
+    print("  Жадное удаление эталонов (max_iter=30)...")
     ref_idx, history = greedy_remove(
-        X_train, y_train, metric=cfg.METRIC, max_iter=150,
+        X_train, y_train, metric=cfg.METRIC, max_iter=30,
     )
-    print(f"  Итоговое число эталонов: {len(ref_idx)} "
-          f"из {len(X_train)}")
+    print(f"  Итоговое число эталонов: {len(ref_idx)} из {len(X_train)}")
     if history:
         hist_arr = np.array(history)
         plt.figure(figsize=(8, 4))
@@ -135,30 +136,51 @@ def main():
         plt.grid(alpha=0.3)
         save_fig("greedy_removal")
 
+    # PCA-визуализация эталонов
+    print("  Визуализация эталонов через PCA...")
+    pca = PCA(n_components=2, random_state=cfg.SEED)
+    X_pca = pca.fit_transform(X_train)
+    ref_mask = np.zeros(len(X_train), dtype=bool)
+    if len(ref_idx) > 0:
+        ref_mask[ref_idx] = True
+
+    plt.figure(figsize=(10, 6))
+    plt.scatter(X_pca[~ref_mask, 0], X_pca[~ref_mask, 1],
+                c=y_train[~ref_mask], cmap="coolwarm",
+                s=15, alpha=0.3, label="Удалённые объекты")
+    plt.scatter(X_pca[ref_mask, 0], X_pca[ref_mask, 1],
+                c=y_train[ref_mask], cmap="coolwarm",
+                s=60, edgecolors="black", linewidths=0.5,
+                label="Оставшиеся эталоны")
+    plt.xlabel("PCA-1")
+    plt.ylabel("PCA-2")
+    plt.title("Эталонные объекты после жадного удаления (PCA)")
+    plt.legend()
+    plt.grid(alpha=0.3)
+    save_fig("pca_reference_set")
 
     # ------- Часть 7. Логистическая регрессия -------
     print("\n[Часть 7] Логистическая регрессия (L2)")
-    gammas = [0.001, 0.01, 0.1, 1.0, 10.0]
-    loo_res, best_g = loo_logreg_gamma(X_train, y_train, gammas)
-    print(f"  LOO best gamma = {best_g}")
+    gammas = [0.01, 0.1, 1.0]
+    cv_res, best_g = loo_logreg_gamma(X_train, y_train, gammas)
+    print(f"  CV best gamma = {best_g}")
 
     logreg = LogisticRegression(
-        C=1.0 / best_g, penalty="l2", max_iter=3000, random_state=cfg.SEED,
+        C=1.0 / best_g, penalty="l2", max_iter=1000, random_state=cfg.SEED,
     )
     logreg.fit(X_train, y_train)
     print_metrics("LogReg", y_val, logreg.predict(X_val))
 
     # ------- Часть 8. Submission -------
     print("\n[Часть 8] Формирование submission")
-    # выбираем лучшую модель по валидации
     candidates = {
-        "kNN": KNNClassifier(k=best_k, metric=cfg.METRIC, weights=cfg.WEIGHTS),
+        "kNN": KNNClassifier(k=best_k, metric=cfg.METRIC, weights="linear"),
         "Parzen": ParzenClassifier(h=best_h, kernel=cfg.KERNEL,
                                    metric=cfg.METRIC, mode="fixed"),
         "Potential": PotentialClassifier(h=best_h, kernel=cfg.KERNEL,
                                          metric=cfg.METRIC),
         "LogReg": LogisticRegression(C=1.0 / best_g, penalty="l2",
-                                     max_iter=3000, random_state=cfg.SEED),
+                                     max_iter=1000, random_state=cfg.SEED),
     }
     best_name, best_acc = None, -1
     for name, clf in candidates.items():
